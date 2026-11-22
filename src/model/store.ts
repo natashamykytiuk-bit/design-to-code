@@ -30,7 +30,11 @@ export function initialDoc(): Doc {
 	const button = createNode("Button");
 	button.props.label = "Sign in";
 	root.children = [title, input, button];
-	return { screens: [{ id: "s1", name: "Screen", root }], themes: structuredClone(starterThemes), activeThemeId: "light" };
+	return {
+		screens: [{ id: "s1", name: "Screen", root }],
+		themes: structuredClone(starterThemes),
+		activeThemeId: "light",
+	};
 }
 
 type State = {
@@ -40,14 +44,30 @@ type State = {
 	selectedId: string | null;
 	hoverId: string | null;
 	screenId: string;
+	/** Key of the in-progress drag gesture; edits with the same key share one undo step. */
+	gesture: string | null;
+	/** Canvas pan/zoom (editor-only, not part of the doc). */
+	view: { x: number; y: number; z: number };
 
+	setView: (view: { x: number; y: number; z: number }) => void;
+	endGesture: () => void;
+	replaceDoc: (doc: Doc) => void;
 	select: (id: string | null) => void;
 	hover: (id: string | null) => void;
-	addNode: (type: string, parentId: string, index?: number) => void;
+	addNode: (
+		type: string,
+		parentId: string,
+		index?: number,
+		style?: Record<string, StyleValue>,
+	) => string | null;
 	removeNode: (id: string) => void;
 	moveNode: (id: string, parentId: string, index: number) => void;
 	updateProps: (id: string, patch: Record<string, unknown>) => void;
-	updateStyle: (id: string, patch: Record<string, StyleValue | undefined>) => void;
+	updateStyle: (
+		id: string,
+		patch: Record<string, StyleValue | undefined>,
+		gesture?: string,
+	) => void;
 	setToken: (group: TokenGroup, name: string, value: string) => void;
 	setActiveTheme: (id: string) => void;
 	undo: () => void;
@@ -59,14 +79,21 @@ type State = {
 
 export const useStore = create<State>((set, get) => {
 	/** Every edit is a small Immer recipe on the doc; the old doc goes onto the undo stack. */
-	const commit = (recipe: (doc: Draft<Doc>, root: Draft<Node>) => void) => {
+	const commit = (recipe: (doc: Draft<Doc>, root: Draft<Node>) => void, gesture?: string) => {
 		const { doc, past, screenId } = get();
 		const next = produce(doc, (d) => {
 			const screen = d.screens.find((s) => s.id === screenId) ?? d.screens[0];
 			recipe(d, screen.root);
 		});
 		if (next === doc) return;
-		set({ doc: next, past: [...past, doc].slice(-HISTORY_LIMIT), future: [] });
+		// A continuing gesture (e.g. a drag-move) replaces the doc without a new undo entry.
+		if (gesture && gesture === get().gesture) return set({ doc: next, future: [] });
+		set({
+			doc: next,
+			past: [...past, doc].slice(-HISTORY_LIMIT),
+			future: [],
+			gesture: gesture ?? null,
+		});
 	};
 
 	return {
@@ -76,18 +103,36 @@ export const useStore = create<State>((set, get) => {
 		selectedId: null,
 		hoverId: null,
 		screenId: "s1",
+		gesture: null,
+		view: { x: 0, y: 32, z: 1 },
+
+		setView: (view) => set({ view }),
+		endGesture: () => set({ gesture: null }),
+		replaceDoc: (doc) =>
+			set({
+				doc,
+				past: [...get().past, get().doc],
+				future: [],
+				selectedId: null,
+				screenId: doc.screens[0].id,
+			}),
 
 		select: (id) => set({ selectedId: id }),
 		hover: (id) => set({ hoverId: id }),
 
-		addNode: (type, parentId, index) => {
+		addNode: (type, parentId, index, style) => {
 			const node = createNode(type);
+			Object.assign(node.style, style);
+			let added = false;
 			commit((_, root) => {
 				const parent = findNode(root as Node, parentId) as Draft<Node> | null;
 				if (!parent || !registry[parent.type].container) return;
 				parent.children.splice(index ?? parent.children.length, 0, node);
+				added = true;
 			});
+			if (!added) return null;
 			set({ selectedId: node.id });
+			return node.id;
 		},
 
 		removeNode: (id) => {
@@ -118,7 +163,7 @@ export const useStore = create<State>((set, get) => {
 				if (n) Object.assign(n.props, patch);
 			}),
 
-		updateStyle: (id, patch) =>
+		updateStyle: (id, patch, gesture) =>
 			commit((_, root) => {
 				const n = findNode(root as Node, id) as Draft<Node> | null;
 				if (!n) return;
@@ -126,7 +171,7 @@ export const useStore = create<State>((set, get) => {
 					if (v === undefined || v === "") delete n.style[k];
 					else n.style[k] = v;
 				}
-			}),
+			}, gesture),
 
 		setToken: (group, name, value) =>
 			commit((d) => {
@@ -157,7 +202,8 @@ export const useStore = create<State>((set, get) => {
 			const raw = localStorage.getItem(STORAGE_KEY);
 			if (!raw) return false;
 			try {
-				const doc = JSON.parse(raw) as Doc;
+				const doc = parseDoc(raw);
+				if (!doc) return false;
 				set({ doc, past: [], future: [], selectedId: null, screenId: doc.screens[0].id });
 				return true;
 			} catch {
@@ -173,3 +219,16 @@ export const useScreen = () =>
 	useStore((s) => s.doc.screens.find((x) => x.id === s.screenId) ?? s.doc.screens[0]);
 export const useActiveTheme = () =>
 	useStore((s) => s.doc.themes.find((t) => t.id === s.doc.activeThemeId) ?? s.doc.themes[0]);
+
+/** Minimal shape check for a doc loaded from storage or an imported file. */
+export function parseDoc(raw: string): Doc | null {
+	try {
+		const doc = JSON.parse(raw) as Doc;
+		if (!Array.isArray(doc.screens) || !doc.screens.length || !Array.isArray(doc.themes))
+			return null;
+		if (!doc.screens.every((s) => s.root && Array.isArray(s.root.children))) return null;
+		return doc;
+	} catch {
+		return null;
+	}
+}
