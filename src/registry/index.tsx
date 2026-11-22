@@ -52,13 +52,26 @@ const Stack: ComponentDef = {
 	type: "Stack",
 	label: "Stack",
 	container: true,
-	defaultProps: { direction: "column", gap: "md", align: "stretch", justify: "flex-start", padding: "md" },
+	defaultProps: {
+		layout: "auto",
+		direction: "column",
+		gap: "md",
+		align: "stretch",
+		justify: "flex-start",
+		padding: "md",
+	},
 	defaultStyle: {},
 	fields: [
+		{ key: "layout", label: "Layout", kind: "select", options: ["auto", "free"] },
 		{ key: "direction", label: "Direction", kind: "select", options: ["column", "row"] },
 		{ key: "gap", label: "Gap", kind: { token: "space" } },
 		{ key: "padding", label: "Padding", kind: { token: "space" } },
-		{ key: "align", label: "Align", kind: "select", options: ["stretch", "flex-start", "center", "flex-end"] },
+		{
+			key: "align",
+			label: "Align",
+			kind: "select",
+			options: ["stretch", "flex-start", "center", "flex-end"],
+		},
 		{
 			key: "justify",
 			label: "Justify",
@@ -68,14 +81,18 @@ const Stack: ComponentDef = {
 		...colorFields,
 		{ key: "borderRadius", label: "Radius", kind: { token: "radius" }, in: "style" },
 	],
-	layoutStyle: (p) => ({
-		display: "flex",
-		flexDirection: str(p.direction) || "column",
-		gap: spaceToken(p.gap),
-		padding: spaceToken(p.padding),
-		alignItems: str(p.align) || "stretch",
-		justifyContent: str(p.justify) || "flex-start",
-	}),
+	layoutStyle: (p): Record<string, StyleValue> =>
+		p.layout === "free"
+			? // Escape hatch: children are absolutely positioned inside this frame.
+				{ position: "relative", minHeight: 240, padding: spaceToken(p.padding) }
+			: {
+					display: "flex",
+					flexDirection: str(p.direction) || "column",
+					gap: spaceToken(p.gap),
+					padding: spaceToken(p.padding),
+					alignItems: str(p.align) || "stretch",
+					justifyContent: str(p.justify) || "flex-start",
+				},
 	render: ({ style, children, editor }) => (
 		<div {...editor} style={style}>
 			{children}
@@ -167,7 +184,12 @@ const Input: ComponentDef = {
 	},
 	fields: [
 		{ key: "placeholder", label: "Placeholder", kind: "text" },
-		{ key: "inputType", label: "Type", kind: "select", options: ["text", "email", "password", "number"] },
+		{
+			key: "inputType",
+			label: "Type",
+			kind: "select",
+			options: ["text", "email", "password", "number"],
+		},
 		...colorFields,
 		{ key: "borderRadius", label: "Radius", kind: { token: "radius" }, in: "style" },
 	],
@@ -180,13 +202,29 @@ const Input: ComponentDef = {
 			readOnly
 		/>
 	),
-	code: (p) => ({ tag: "input", attrs: { type: str(p.inputType) || "text", placeholder: str(p.placeholder) } }),
+	code: (p) => ({
+		tag: "input",
+		attrs: { type: str(p.inputType) || "text", placeholder: str(p.placeholder) },
+	}),
 };
 
 export const registry: Record<string, ComponentDef> = { Stack, Text, Button, Image, Input };
 export const paletteOrder = ["Stack", "Text", "Button", "Image", "Input"];
 
-/** Full token-referencing style for a node: layout derived from props, then explicit style. */
-export function nodeStyle(def: ComponentDef, node: { props: Record<string, unknown>; style: Record<string, StyleValue> }) {
-	return { ...(def.layoutStyle?.(node.props) ?? {}), ...node.style };
+export const isFreeFrame = (node: { type: string; props: Record<string, unknown> }) =>
+	!!registry[node.type]?.container && node.props.layout === "free";
+
+/**
+ * Full token-referencing style for a node: layout derived from props, then explicit style.
+ * left/top only apply when the parent is a free frame; there the node is absolutely positioned.
+ */
+export function effectiveStyle(
+	def: ComponentDef,
+	node: { props: Record<string, unknown>; style: Record<string, StyleValue> },
+	parentFree = false,
+): Record<string, StyleValue> {
+	const { left, top, ...rest } = node.style;
+	const base = { ...(def.layoutStyle?.(node.props) ?? {}), ...rest };
+	if (!parentFree) return base;
+	return { ...base, position: "absolute", left: left ?? 0, top: top ?? 0 };
 }

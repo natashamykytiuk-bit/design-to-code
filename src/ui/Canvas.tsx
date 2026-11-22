@@ -2,10 +2,10 @@ import type { CSSProperties } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import type { Node } from "../model/types";
 import { useActiveTheme, useScreen, useStore } from "../model/store";
-import { registry, nodeStyle } from "../registry";
+import { registry, effectiveStyle, isFreeFrame } from "../registry";
 import { resolveStyle, themeVars } from "../theme/tokens";
 
-function CanvasNode({ node }: { node: Node }) {
+function CanvasNode({ node, parentFree }: { node: Node; parentFree: boolean }) {
 	const def = registry[node.type];
 	const selected = useStore((s) => s.selectedId === node.id);
 	const hovered = useStore((s) => s.hoverId === node.id);
@@ -18,7 +18,7 @@ function CanvasNode({ node }: { node: Node }) {
 	});
 	if (!def) return null;
 
-	const style = resolveStyle(nodeStyle(def, node)) as CSSProperties;
+	const style = resolveStyle(effectiveStyle(def, node, parentFree)) as CSSProperties;
 	const outline = selected
 		? "2px solid #3b82f6"
 		: isOver
@@ -38,7 +38,9 @@ function CanvasNode({ node }: { node: Node }) {
 			hover(node.id);
 		},
 	};
-	const children = node.children.map((c) => <CanvasNode key={c.id} node={c} />);
+	const children = node.children.map((c) => (
+		<CanvasNode key={c.id} node={c} parentFree={isFreeFrame(node)} />
+	));
 	if (def.container && !node.children.length) {
 		children.push(
 			<div key="__empty" className="empty-drop">
@@ -66,7 +68,7 @@ export function Canvas() {
 				style={themeVars(theme) as CSSProperties}
 				onMouseLeave={() => hover(null)}
 			>
-				<CanvasNode node={screen.root} />
+				<CanvasNode node={screen.root} parentFree={false} />
 			</div>
 		</div>
 	);

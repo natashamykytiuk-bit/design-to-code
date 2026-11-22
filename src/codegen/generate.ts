@@ -1,6 +1,6 @@
 import type { Doc, Node, Theme } from "../model/types";
 import { TOKEN_GROUPS } from "../model/types";
-import { registry, nodeStyle } from "../registry";
+import { registry, effectiveStyle, isFreeFrame } from "../registry";
 import { cssVarName, resolveStyle } from "../theme/tokens";
 
 export type GeneratedFile = { path: string; language: "tsx" | "css"; content: string };
@@ -24,18 +24,19 @@ function textChild(text: string): string {
 	return /[{}<>]/.test(text) || text.trim() !== text ? `{${JSON.stringify(text)}}` : text;
 }
 
-function nodeToJsx(node: Node, depth: number): string {
+function nodeToJsx(node: Node, depth: number, parentFree = false): string {
 	const def = registry[node.type];
 	const indent = "\t".repeat(depth);
 	if (!def) return `${indent}{/* Unknown component: ${node.type} */}`;
 	const tpl = def.code(node.props);
 	const attrs = Object.entries(tpl.attrs).map(([k, v]) => `${k}=${JSON.stringify(v)}`);
-	const style = styleLiteral(resolveStyle(nodeStyle(def, node)));
+	const style = styleLiteral(resolveStyle(effectiveStyle(def, node, parentFree)));
 	if (style) attrs.push(`style=${style}`);
 	const open = `${indent}<${tpl.tag}${attrs.length ? " " + attrs.join(" ") : ""}`;
 	const inner: string[] = [];
 	if (tpl.text) inner.push(`${indent}\t${textChild(tpl.text)}`);
-	for (const child of node.children) inner.push(nodeToJsx(child, depth + 1));
+	const free = isFreeFrame(node);
+	for (const child of node.children) inner.push(nodeToJsx(child, depth + 1, free));
 	if (!inner.length) return `${open} />`;
 	return `${open}>\n${inner.join("\n")}\n${indent}</${tpl.tag}>`;
 }
