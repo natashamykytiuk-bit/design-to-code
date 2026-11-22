@@ -181,6 +181,55 @@ input {
 	top: 0;
 	transform-origin: 0 0;
 }
+.overlay {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+}
+.overlay > div {
+	position: absolute;
+	border-style: solid;
+	box-sizing: border-box;
+}
+.ov-hover {
+	border-color: #93c5fd;
+}
+.ov-over {
+	border-color: #22c55e;
+	border-style: dashed !important;
+	background: rgba(34, 197, 94, 0.06);
+}
+.ov-selected {
+	border-color: #3b82f6;
+}
+.ov-selected.movable {
+	pointer-events: auto;
+	cursor: move;
+}
+.ov-label {
+	position: absolute;
+	top: -20px;
+	left: -2px;
+	transform-origin: 0 100%;
+	background: #3b82f6;
+	color: #fff;
+	font-size: 11px;
+	padding: 1px 6px;
+	border-radius: 3px 3px 0 0;
+	white-space: nowrap;
+}
+.ov-handle {
+	position: absolute;
+	right: -6px;
+	bottom: -6px;
+	width: 10px;
+	height: 10px;
+	background: #fff;
+	border: 2px solid #3b82f6;
+	border-radius: 2px;
+	pointer-events: auto;
+	cursor: nwse-resize;
+}
 .zoom-controls {
 	position: absolute;
 	right: 12px;
