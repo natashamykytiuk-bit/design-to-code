@@ -9,7 +9,7 @@ import {
 	type DragEndEvent,
 	type DragStartEvent,
 } from "@dnd-kit/core";
-import { useStore } from "./model/store";
+import { parseDoc, useStore } from "./model/store";
 import { findNode, findParent } from "./model/tree";
 import { registry } from "./registry";
 import { LeftPanel } from "./ui/LeftPanel";
@@ -69,10 +69,15 @@ export default function App() {
 		setDragLabel(null);
 		const { active, over } = e;
 		if (!over) return;
-		const src = active.data.current as { kind: "palette" | "layer"; type?: string; nodeId?: string };
+		const src = active.data.current as {
+			kind: "palette" | "layer";
+			type?: string;
+			nodeId?: string;
+		};
 		const dst = over.data.current as { nodeId: string; fromLayers?: boolean };
 		const state = useStore.getState();
-		const root = (state.doc.screens.find((x) => x.id === state.screenId) ?? state.doc.screens[0]).root;
+		const root = (state.doc.screens.find((x) => x.id === state.screenId) ?? state.doc.screens[0])
+			.root;
 		const target = findNode(root, dst.nodeId);
 		if (!target) return;
 		const isContainer = registry[target.type].container;
@@ -95,15 +100,40 @@ export default function App() {
 			const parent = findParent(root, target.id);
 			if (!parent) return;
 			parentId = parent.id;
-			index = parent.children.findIndex((c) => c.id === target.id) + (placement === "after" ? 1 : 0);
+			index =
+				parent.children.findIndex((c) => c.id === target.id) + (placement === "after" ? 1 : 0);
 		}
 
-		if (src.kind === "palette") state.addNode(src.type!, parentId, index);
-		else if (src.nodeId && src.nodeId !== target.id) state.moveNode(src.nodeId, parentId, index);
+		if (src.kind === "palette") {
+			state.addNode(src.type!, parentId, index);
+		} else if (src.nodeId && src.nodeId !== target.id) {
+			state.moveNode(src.nodeId, parentId, index);
+		}
+	};
+
+	const exportJson = () => {
+		const blob = new Blob([JSON.stringify(s.doc, null, "\t")], { type: "application/json" });
+		const url = URL.createObjectURL(blob);
+		Object.assign(document.createElement("a"), { href: url, download: "design.json" }).click();
+		URL.revokeObjectURL(url);
+	};
+
+	const importJson = async (file: File | undefined) => {
+		if (!file) return;
+		const doc = parseDoc(await file.text());
+		if (doc) {
+			s.replaceDoc(doc);
+			flash("Imported");
+		} else flash("Not a valid design file");
 	};
 
 	return (
-		<DndContext sensors={sensors} collisionDetection={pointerWithin} onDragStart={onDragStart} onDragEnd={onDragEnd}>
+		<DndContext
+			sensors={sensors}
+			collisionDetection={pointerWithin}
+			onDragStart={onDragStart}
+			onDragEnd={onDragEnd}
+		>
 			<div className="app">
 				<header className="topbar">
 					<strong className="brand">Design → Code</strong>
@@ -141,6 +171,21 @@ export default function App() {
 						Save
 					</button>
 					<button onClick={() => flash(s.load() ? "Loaded" : "Nothing saved yet")}>Load</button>
+					<button onClick={exportJson} title="Download the design as JSON">
+						Export
+					</button>
+					<label className="file-btn" title="Open a design JSON file">
+						Import
+						<input
+							type="file"
+							accept="application/json,.json"
+							hidden
+							onChange={(e) => {
+								importJson(e.target.files?.[0]);
+								e.target.value = "";
+							}}
+						/>
+					</label>
 					<button onClick={s.reset} title="Start over with the sample screen">
 						New
 					</button>
@@ -154,7 +199,9 @@ export default function App() {
 				</main>
 				<Properties />
 			</div>
-			<DragOverlay dropAnimation={null}>{dragLabel && <div className="drag-ghost">{dragLabel}</div>}</DragOverlay>
+			<DragOverlay dropAnimation={null}>
+				{dragLabel && <div className="drag-ghost">{dragLabel}</div>}
+			</DragOverlay>
 		</DndContext>
 	);
 }
