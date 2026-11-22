@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useStore } from "../model/store";
 import { generate, type GeneratedFile } from "../codegen/generate";
 import { formatFiles } from "../codegen/format";
+import { projectFiles } from "../codegen/project";
 
 const download = (blob: Blob, name: string) => {
 	const url = URL.createObjectURL(blob);
@@ -46,6 +47,13 @@ export function CodeView() {
 		setTimeout(() => setCopied(false), 1200);
 	};
 
+	const downloadZip = async () => {
+		const { default: JSZip } = await import("jszip");
+		const zip = new JSZip();
+		for (const f of projectFiles(doc, files)) zip.file(f.path, f.content);
+		download(await zip.generateAsync({ type: "blob" }), "generated-app.zip");
+	};
+
 	return (
 		<div className="code-view">
 			<div className="code-tabs">
@@ -64,6 +72,9 @@ export function CodeView() {
 					onClick={() => download(new Blob([file.content], { type: "text/plain" }), file.path)}
 				>
 					Download file
+				</button>
+				<button onClick={downloadZip} title="Runnable Vite + React project">
+					Download project (.zip)
 				</button>
 			</div>
 			{html ? (
