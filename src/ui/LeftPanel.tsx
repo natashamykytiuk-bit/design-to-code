@@ -55,8 +55,15 @@ function LayerRow({ node, depth }: { node: Node; depth: number }) {
 	const hover = useStore((s) => s.hover);
 	const removeNode = useStore((s) => s.removeNode);
 	const isRoot = node.id === "root";
-	const drag = useDraggable({ id: `layer:${node.id}`, data: { kind: "layer", nodeId: node.id }, disabled: isRoot });
-	const drop = useDroppable({ id: `layerdrop:${node.id}`, data: { nodeId: node.id, fromLayers: true } });
+	const drag = useDraggable({
+		id: `layer:${node.id}`,
+		data: { kind: "layer", nodeId: node.id },
+		disabled: isRoot,
+	});
+	const drop = useDroppable({
+		id: `layerdrop:${node.id}`,
+		data: { nodeId: node.id, fromLayers: true },
+	});
 	return (
 		<>
 			<div
@@ -105,7 +112,10 @@ export function LeftPanel() {
 				))}
 			</div>
 			<h3>Layers</h3>
-			<p className="hint">Drag a layer onto the top half of a row to place it before; bottom half to drop inside a Stack.</p>
+			<p className="hint">
+				Drag a layer onto the top half of a row to place it before; bottom half to drop inside a
+				Stack.
+			</p>
 			<div className="layers">
 				<LayerRow node={screen.root} depth={0} />
 			</div>

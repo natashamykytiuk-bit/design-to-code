@@ -25,7 +25,8 @@ export function Properties() {
 	const renderField = (f: Field) => {
 		const inStyle = f.in === "style";
 		const raw = inStyle ? node.style[f.key] : node.props[f.key];
-		const set = (v: string) => (inStyle ? updateStyle(node.id, { [f.key]: v }) : updateProps(node.id, { [f.key]: v }));
+		const set = (v: string) =>
+			inStyle ? updateStyle(node.id, { [f.key]: v }) : updateProps(node.id, { [f.key]: v });
 
 		if (f.kind === "text") {
 			return <input value={String(raw ?? "")} onChange={(e) => set(e.target.value)} />;
@@ -41,7 +42,9 @@ export function Properties() {
 		}
 		// Token picker. Style fields store "$group.name"; layout props store the bare token name.
 		const group = f.kind.token;
-		const current = inStyle ? (parseTokenRef((raw ?? "") as string)?.name ?? "") : String(raw ?? "");
+		const current = inStyle
+			? (parseTokenRef((raw ?? "") as string)?.name ?? "")
+			: String(raw ?? "");
 		const names = Object.keys(theme.tokens[group]);
 		return (
 			<div className="token-picker">
@@ -50,7 +53,9 @@ export function Properties() {
 				)}
 				<select
 					value={current}
-					onChange={(e) => set(e.target.value ? (inStyle ? `$${group}.${e.target.value}` : e.target.value) : "")}
+					onChange={(e) =>
+						set(e.target.value ? (inStyle ? `$${group}.${e.target.value}` : e.target.value) : "")
+					}
 				>
 					<option value="">{inStyle ? "— none —" : "0"}</option>
 					{names.map((n) => (

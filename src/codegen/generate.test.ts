@@ -14,11 +14,29 @@ const doc: Doc = {
 			root: {
 				id: "root",
 				type: "Stack",
-				props: { direction: "column", gap: "md", padding: "lg", align: "stretch", justify: "flex-start" },
+				props: {
+					direction: "column",
+					gap: "md",
+					padding: "lg",
+					align: "stretch",
+					justify: "flex-start",
+				},
 				style: { background: "$color.bg" },
 				children: [
-					{ id: "t", type: "Text", props: { text: "Hello <you>", as: "h1" }, style: { color: "$color.text" }, children: [] },
-					{ id: "b", type: "Button", props: { label: "Go" }, style: { borderRadius: "$radius.md" }, children: [] },
+					{
+						id: "t",
+						type: "Text",
+						props: { text: "Hello <you>", as: "h1" },
+						style: { color: "$color.text" },
+						children: [],
+					},
+					{
+						id: "b",
+						type: "Button",
+						props: { label: "Go" },
+						style: { borderRadius: "$radius.md" },
+						children: [],
+					},
 				],
 			},
 		},

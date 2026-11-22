@@ -7,7 +7,10 @@ export function ThemeEditor() {
 	return (
 		<div className="theme-editor">
 			<h2>Theme: {theme.name}</h2>
-			<p className="hint">Edits apply to the active theme. Components reference these tokens, so changes show everywhere.</p>
+			<p className="hint">
+				Edits apply to the active theme. Components reference these tokens, so changes show
+				everywhere.
+			</p>
 			{TOKEN_GROUPS.map((group) => (
 				<section key={group}>
 					<h3>{group}</h3>
@@ -19,7 +22,11 @@ export function ThemeEditor() {
 								</span>
 								<div className="token-picker">
 									{group === "color" && (
-										<input type="color" value={value} onChange={(e) => setToken(group, name, e.target.value)} />
+										<input
+											type="color"
+											value={value}
+											onChange={(e) => setToken(group, name, e.target.value)}
+										/>
 									)}
 									<input value={value} onChange={(e) => setToken(group, name, e.target.value)} />
 								</div>
