@@ -11,7 +11,7 @@ import {
 } from "@dnd-kit/core";
 import { parseDoc, useStore } from "./model/store";
 import { findNode, findParent } from "./model/tree";
-import { registry } from "./registry";
+import { isFreeFrame, registry } from "./registry";
 import { LeftPanel } from "./ui/LeftPanel";
 import { Canvas } from "./ui/Canvas";
 import { Properties } from "./ui/Properties";
@@ -104,10 +104,26 @@ export default function App() {
 				parent.children.findIndex((c) => c.id === target.id) + (placement === "after" ? 1 : 0);
 		}
 
+		// Dropping into a free frame on the canvas places the node where it was dropped.
+		let position: { left: number; top: number } | undefined;
+		const parentNode = findNode(root, parentId);
+		const dropRect = active.rect.current.translated;
+		const frameEl = document.querySelector(`.stage [data-node-id="${parentId}"]`);
+		if (parentNode && isFreeFrame(parentNode) && dropRect && frameEl && !dst.fromLayers) {
+			const r = frameEl.getBoundingClientRect();
+			const z = state.view.z;
+			position = {
+				left: Math.max(0, Math.round((dropRect.left - r.left) / z)),
+				top: Math.max(0, Math.round((dropRect.top - r.top) / z)),
+			};
+		}
+
 		if (src.kind === "palette") {
-			state.addNode(src.type!, parentId, index);
+			state.addNode(src.type!, parentId, index, position);
 		} else if (src.nodeId && src.nodeId !== target.id) {
 			state.moveNode(src.nodeId, parentId, index);
+			if (position) state.updateStyle(src.nodeId, position, `drop:${src.nodeId}`);
+			state.endGesture();
 		}
 	};
 
