@@ -20,7 +20,12 @@ const docSchema = z
 		themes: z.array(z.unknown()),
 		activeThemeId: z.string(),
 	})
-	.passthrough();
+	.passthrough()
+	// Images must be uploaded (POST /uploads) and referenced by URL, not pasted
+	// in as data: URLs, which would bloat the design past DynamoDB's item limit.
+	.refine((doc) => !/"\s*data:/i.test(JSON.stringify(doc)), {
+		message: "Embedded data: URLs are not allowed; upload the image instead",
+	});
 const bodySchema = z.object({ name: z.string().trim().min(1).max(200), doc: docSchema });
 const idSchema = z.string().uuid();
 

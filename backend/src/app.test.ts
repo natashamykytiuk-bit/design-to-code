@@ -49,6 +49,19 @@ describe("designs API", () => {
 		await request(createApp(memoryRepo(), "apigateway")).get("/designs").expect(401);
 	});
 
+	it("rejects designs with embedded data: images", async () => {
+		const withImage = {
+			...doc,
+			screens: [
+				{
+					id: "s1",
+					root: { children: [{ type: "Image", props: { src: "data:image/png;base64,AAAA" } }] },
+				},
+			],
+		};
+		await request(devApp()).post("/designs").send({ name: "x", doc: withImage }).expect(400);
+	});
+
 	it("issues upload tickets for images only, scoped to the user", async () => {
 		const seen: string[] = [];
 		const uploader: Uploader = {
