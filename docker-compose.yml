@@ -1,0 +1,28 @@
+# Local development: DynamoDB Local plus the API. Run `docker compose up --build`.
+# The API is then on http://localhost:3000 with sign-in replaced by a dev user.
+services:
+  dynamodb:
+    image: amazon/dynamodb-local:2.5.3
+    command: ["-jar", "DynamoDBLocal.jar", "-sharedDb", "-dbPath", "/data"]
+    user: root
+    ports:
+      - "8000:8000"
+    volumes:
+      - dynamodata:/data
+
+  api:
+    build: ./backend
+    environment:
+      TABLE_NAME: designs
+      DYNAMODB_ENDPOINT: http://dynamodb:8000
+      # DynamoDB Local accepts any credentials, but the SDK requires some.
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: local
+      AWS_SECRET_ACCESS_KEY: local
+    ports:
+      - "3000:3000"
+    depends_on:
+      - dynamodb
+
+volumes:
+  dynamodata:
