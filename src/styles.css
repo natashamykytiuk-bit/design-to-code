@@ -361,3 +361,161 @@ input {
 	padding: 4px 8px;
 	cursor: pointer;
 }
+
+/* Cloud panel */
+.cloud-btn {
+	max-width: 200px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.modal-backdrop {
+	position: fixed;
+	inset: 0;
+	background: rgb(17 24 39 / 0.35);
+	display: grid;
+	place-items: center;
+	padding: 16px;
+	z-index: 100;
+}
+.modal {
+	width: min(420px, 100%);
+	max-height: calc(100vh - 32px);
+	overflow: auto;
+	background: var(--ui-panel);
+	border-radius: 10px;
+	box-shadow: 0 20px 50px rgb(0 0 0 / 0.2);
+	padding: 16px 20px 20px;
+}
+.modal header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 8px;
+}
+.modal h3 {
+	margin: 0;
+	font-size: 15px;
+}
+.modal h4 {
+	margin: 16px 0 6px;
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--ui-muted);
+}
+.modal button,
+.modal input {
+	border: 1px solid var(--ui-border);
+	background: #fff;
+	border-radius: 6px;
+	padding: 6px 10px;
+	color: var(--ui-text);
+}
+.modal button:disabled {
+	opacity: 0.5;
+}
+.modal button.primary,
+.prop-upload button.primary {
+	background: var(--ui-accent);
+	border-color: var(--ui-accent);
+	color: #fff;
+}
+.modal button.link {
+	border: none;
+	background: none;
+	padding: 0;
+	color: var(--ui-accent);
+	cursor: pointer;
+}
+.modal .icon-btn {
+	border: none;
+	background: none;
+	font-size: 18px;
+	line-height: 1;
+	padding: 2px 6px;
+}
+.cloud-form {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+.cloud-form .field,
+.cloud-save .field {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+.cloud-error {
+	color: #b91c1c;
+	margin: 10px 0 0;
+}
+.cloud-info {
+	color: var(--ui-muted);
+	margin: 10px 0 0;
+}
+.cloud-user {
+	display: flex;
+	gap: 6px;
+	align-items: baseline;
+	flex-wrap: wrap;
+}
+.cloud-user .link {
+	margin-left: auto;
+}
+.cloud-save {
+	margin-top: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+.cloud-save .row {
+	display: flex;
+	gap: 8px;
+}
+.cloud-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+.cloud-list li {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	border-radius: 6px;
+}
+.cloud-list li.current {
+	background: #eff6ff;
+}
+.modal .cloud-open {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	justify-content: space-between;
+	gap: 8px;
+	text-align: left;
+	border-color: transparent;
+	background: transparent;
+	cursor: pointer;
+}
+.modal .cloud-open:hover {
+	background: var(--ui-bg);
+}
+.cloud-open span:first-child {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.prop-upload {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: -4px 0 10px;
+}
+.cloud-form .field,
+.cloud-save .field {
+	margin-bottom: 0;
+}
