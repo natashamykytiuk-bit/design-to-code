@@ -2,6 +2,7 @@ import request from "supertest";
 import { describe, expect, it } from "vitest";
 import { createApp } from "./app.js";
 import { memoryRepo } from "./repo.js";
+import type { Uploader } from "./uploads.js";
 
 const doc = { screens: [{ id: "s1", root: { children: [] } }], themes: [], activeThemeId: "t1" };
 const devApp = () => createApp(memoryRepo(), "dev");
@@ -46,6 +47,35 @@ describe("designs API", () => {
 
 	it("returns 401 when API Gateway passed no verified user", async () => {
 		await request(createApp(memoryRepo(), "apigateway")).get("/designs").expect(401);
+	});
+
+	it("issues upload tickets for images only, scoped to the user", async () => {
+		const seen: string[] = [];
+		const uploader: Uploader = {
+			async createTicket(ownerId, contentType) {
+				seen.push(`${ownerId}:${contentType}`);
+				return { uploadUrl: "https://s3.example", fields: {}, url: "https://cdn.example/a.png" };
+			},
+		};
+		const app = createApp(memoryRepo(), "dev", uploader);
+
+		const ok = await request(app)
+			.post("/uploads")
+			.set("x-dev-user", "alice")
+			.send({ contentType: "image/png", size: 1000 })
+			.expect(201);
+		expect(ok.body.url).toBe("https://cdn.example/a.png");
+		expect(seen).toEqual(["alice:image/png"]);
+
+		await request(app).post("/uploads").send({ contentType: "text/html", size: 10 }).expect(400);
+		await request(app)
+			.post("/uploads")
+			.send({ contentType: "image/png", size: 50 * 1024 * 1024 })
+			.expect(400);
+	});
+
+	it("reports uploads as unavailable when no bucket is configured", async () => {
+		await request(devApp()).post("/uploads").send({ contentType: "image/png", size: 1 }).expect(501);
 	});
 
 	it("serves a health check without auth", async () => {

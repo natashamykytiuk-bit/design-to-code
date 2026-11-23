@@ -4,6 +4,7 @@
 import { createApp } from "./app.js";
 import { dynamoConfigFromEnv, dynamoRepo, ensureTable } from "./dynamoRepo.js";
 import { memoryRepo, type DesignRepo } from "./repo.js";
+import { uploaderFromEnv } from "./uploads.js";
 
 let repo: DesignRepo;
 if (process.env.TABLE_NAME) {
@@ -16,6 +17,7 @@ if (process.env.TABLE_NAME) {
 }
 
 const port = Number(process.env.PORT ?? 3000);
-createApp(repo, "dev").listen(port, () => {
+// Uploads need a real S3 bucket, so locally they are off unless UPLOAD_BUCKET is set.
+createApp(repo, "dev", uploaderFromEnv()).listen(port, () => {
 	console.log(`API listening on http://localhost:${port}`);
 });

@@ -1,6 +1,13 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import { z } from "zod";
 import type { DesignRepo } from "./repo.js";
+import { IMAGE_TYPES, MAX_UPLOAD_BYTES, type Uploader } from "./uploads.js";
+
+const uploadSchema = z.object({
+	contentType: z.enum(Object.keys(IMAGE_TYPES) as [string, ...string[]]),
+	/** Checked here for a friendly error; S3 enforces it regardless. */
+	size: z.number().int().positive().max(MAX_UPLOAD_BYTES),
+});
 
 /** Same minimal shape the frontend's parseDoc() accepts. */
 const docSchema = z
@@ -36,8 +43,9 @@ const wrap =
 	(req: Request, res: Response, next: NextFunction) =>
 		fn(req, res).catch(next);
 
-export function createApp(repo: DesignRepo, authMode: AuthMode) {
+export function createApp(repo: DesignRepo, authMode: AuthMode, uploader: Uploader | null = null) {
 	const app = express();
+	// DynamoDB items max out at 400 KB; stay safely under it.
 	app.use(express.json({ limit: "350kb" }));
 
 	app.get("/health", (_req, res) => {
@@ -53,6 +61,17 @@ export function createApp(repo: DesignRepo, authMode: AuthMode) {
 		res.locals.uid = uid;
 		next();
 	};
+
+	app.post(
+		"/uploads",
+		requireUser,
+		wrap(async (req, res) => {
+			if (!uploader) return res.status(501).json({ error: "uploads are not configured" });
+			const body = uploadSchema.safeParse(req.body);
+			if (!body.success) return res.status(400).json({ error: body.error.flatten() });
+			res.status(201).json(await uploader.createTicket(res.locals.uid, body.data.contentType));
+		}),
+	);
 
 	const designs = express.Router();
 	designs.use(requireUser);
