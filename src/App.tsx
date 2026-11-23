@@ -17,6 +17,9 @@ import { Canvas } from "./ui/Canvas";
 import { Properties } from "./ui/Properties";
 import { ThemeEditor } from "./ui/ThemeEditor";
 import { CodeView } from "./ui/CodeView";
+import { CloudPanel } from "./ui/CloudPanel";
+import { cloudMode } from "./cloud/config";
+import { useCloud } from "./cloud/store";
 
 type View = "design" | "code" | "theme";
 
@@ -24,6 +27,8 @@ export default function App() {
 	const [view, setView] = useState<View>("design");
 	const [dragLabel, setDragLabel] = useState<string | null>(null);
 	const [status, setStatus] = useState("");
+	const [cloudOpen, setCloudOpen] = useState(false);
+	const cloudCurrent = useCloud((c) => c.current);
 	const s = useStore();
 	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
@@ -202,9 +207,24 @@ export default function App() {
 							}}
 						/>
 					</label>
-					<button onClick={s.reset} title="Start over with the sample screen">
+					<button
+						onClick={() => {
+							s.reset();
+							useCloud.getState().setCurrent(null);
+						}}
+						title="Start over with the sample screen"
+					>
 						New
 					</button>
+					{cloudMode !== "off" && (
+						<button
+							className="cloud-btn"
+							onClick={() => setCloudOpen(true)}
+							title="Sign in, save to and open from the cloud"
+						>
+							{cloudCurrent ? `☁ ${cloudCurrent.name}` : "☁ Cloud"}
+						</button>
+					)}
 					<span className="status">{status}</span>
 				</header>
 				<LeftPanel />
@@ -215,6 +235,7 @@ export default function App() {
 				</main>
 				<Properties />
 			</div>
+			{cloudOpen && <CloudPanel onClose={() => setCloudOpen(false)} flash={flash} />}
 			<DragOverlay dropAnimation={null}>
 				{dragLabel && <div className="drag-ghost">{dragLabel}</div>}
 			</DragOverlay>

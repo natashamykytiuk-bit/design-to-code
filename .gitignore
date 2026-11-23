@@ -1,3 +1,13 @@
 node_modules
 dist
 .claude
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+infra/.build/
+
+# Local env overrides
+*.local
+*.tsbuildinfo

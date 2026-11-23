@@ -1,0 +1,32 @@
+{
+	"name": "design-to-code-api",
+	"private": true,
+	"version": "0.1.0",
+	"type": "module",
+	"scripts": {
+		"dev": "tsx watch src/server.ts",
+		"start": "tsx src/server.ts",
+		"typecheck": "tsc --noEmit",
+		"build": "tsc --noEmit && node build.mjs",
+		"test": "vitest run"
+	},
+	"dependencies": {
+		"@aws-sdk/client-dynamodb": "^3.1175.0",
+		"@aws-sdk/client-s3": "^3.1175.0",
+		"@aws-sdk/lib-dynamodb": "^3.1175.0",
+		"@aws-sdk/s3-presigned-post": "^3.1175.0",
+		"@codegenie/serverless-express": "^4.16.0",
+		"express": "^4.21.1",
+		"zod": "^3.23.8"
+	},
+	"devDependencies": {
+		"@types/express": "^4.17.21",
+		"@types/node": "^20.17.6",
+		"@types/supertest": "^6.0.2",
+		"esbuild": "^0.24.0",
+		"supertest": "^7.0.0",
+		"tsx": "^4.19.2",
+		"typescript": "~5.6.3",
+		"vitest": "^2.1.4"
+	}
+}

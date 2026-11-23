@@ -2,6 +2,8 @@ import { useActiveTheme, useScreen, useStore } from "../model/store";
 import { findNode } from "../model/tree";
 import { registry, type Field } from "../registry";
 import { parseTokenRef } from "../theme/tokens";
+import { cloudMode } from "../cloud/config";
+import { ImageUpload } from "./ImageUpload";
 
 export function Properties() {
 	const screen = useScreen();
@@ -74,10 +76,15 @@ export function Properties() {
 				{def.label} <span className="muted">#{node.id}</span>
 			</h3>
 			{def.fields.map((f) => (
-				<label key={f.key} className="field">
-					<span>{f.label}</span>
-					{renderField(f)}
-				</label>
+				<div key={f.key}>
+					<label className="field">
+						<span>{f.label}</span>
+						{renderField(f)}
+					</label>
+					{node.type === "Image" && f.key === "src" && cloudMode !== "off" && (
+						<ImageUpload onUploaded={(url) => updateProps(node.id, { src: url })} />
+					)}
+				</div>
 			))}
 			{node.id !== "root" && (
 				<button className="danger" onClick={() => removeNode(node.id)}>
