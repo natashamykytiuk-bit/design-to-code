@@ -7,4 +7,7 @@ dist
 *.tfstate
 *.tfstate.*
 infra/.build/
+
+# Local env overrides
+*.local
 *.tsbuildinfo

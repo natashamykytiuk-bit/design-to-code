@@ -26,7 +26,7 @@ variable "project" {
 variable "extra_cors_origins" {
   description = "Origins besides the CloudFront site allowed to call the API (e.g. the Vite dev server)."
   type        = list(string)
-  default     = ["http://localhost:5173"]
+  default     = ["http://localhost:5173", "http://localhost:5174"]
 }
 
 locals {

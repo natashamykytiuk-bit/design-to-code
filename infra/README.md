@@ -30,7 +30,16 @@ cd backend && npm ci && npm run build && cd ..   # bundles backend/dist/index.mj
 cd infra && terraform init && terraform apply
 ```
 
-Then upload the frontend:
+Point the frontend at AWS by creating `.env.production.local` in the project root
+with the Terraform outputs (see `.env.example`):
+
+```sh
+VITE_API_URL=<api_url>
+VITE_COGNITO_USER_POOL_ID=<cognito_user_pool_id>
+VITE_COGNITO_CLIENT_ID=<cognito_client_id>
+```
+
+Then build and upload the frontend:
 
 ```sh
 npm run build
