@@ -22,12 +22,12 @@ resource "aws_cognito_user_pool" "users" {
 }
 
 # Public client for the browser app (no client secret).
+# The app sends email + password to Cognito over HTTPS (USER_PASSWORD_AUTH),
+# which keeps the frontend free of an auth SDK.
 resource "aws_cognito_user_pool_client" "web" {
   name                          = "${var.project}-web"
   user_pool_id                  = aws_cognito_user_pool.users.id
   generate_secret               = false
-  # The app sends email + password to Cognito over HTTPS (USER_PASSWORD_AUTH),
-  # which keeps the frontend free of an auth SDK.
-  explicit_auth_flows = ["ALLOW_USER_PASSWORD_AUTH", "ALLOW_USER_SRP_AUTH", "ALLOW_REFRESH_TOKEN_AUTH"]
+  explicit_auth_flows           = ["ALLOW_USER_PASSWORD_AUTH", "ALLOW_USER_SRP_AUTH", "ALLOW_REFRESH_TOKEN_AUTH"]
   prevent_user_existence_errors = "ENABLED"
 }
