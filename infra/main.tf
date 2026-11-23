@@ -29,3 +29,7 @@ variable "extra_cors_origins" {
   default     = ["http://localhost:5173"]
 }
 
+locals {
+  # Browser origins allowed to call the API and upload to S3.
+  app_origins = concat(["https://${aws_cloudfront_distribution.site.domain_name}"], var.extra_cors_origins)
+}

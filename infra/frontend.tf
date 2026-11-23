@@ -32,6 +32,23 @@ resource "aws_cloudfront_distribution" "site" {
     origin_access_control_id = aws_cloudfront_origin_access_control.site.id
   }
 
+  origin {
+    domain_name              = aws_s3_bucket.uploads.bucket_regional_domain_name
+    origin_id                = "uploads"
+    origin_access_control_id = aws_cloudfront_origin_access_control.site.id
+  }
+
+  # Uploaded images: keys are unique UUIDs, so they can be cached aggressively.
+  ordered_cache_behavior {
+    path_pattern           = "uploads/*"
+    target_origin_id       = "uploads"
+    viewer_protocol_policy = "redirect-to-https"
+    allowed_methods        = ["GET", "HEAD"]
+    cached_methods         = ["GET", "HEAD"]
+    cache_policy_id        = "658327ea-f89d-4fab-a63d-7e88639e58f6"
+    compress               = true
+  }
+
   default_cache_behavior {
     target_origin_id       = "s3"
     viewer_protocol_policy = "redirect-to-https"

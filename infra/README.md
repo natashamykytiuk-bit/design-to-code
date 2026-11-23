@@ -8,6 +8,7 @@ Terraform for the AWS deployment. The design keeps idle cost near zero:
 | Database | DynamoDB, 5 read / 5 write capacity units | $0 (inside the always-free allowance) |
 | Auth | Cognito user pool, JWT checked by API Gateway | Free at small user counts |
 | Frontend | S3 + CloudFront | Cents |
+| Image uploads | Separate S3 bucket, pre-signed POST from the API, served at `/uploads/*` on CloudFront | ~2¢ per GB stored |
 
 There is no VPC, NAT Gateway or load balancer, so nothing bills while idle.
 
@@ -47,7 +48,11 @@ This deletes the table **and every saved design**.
 
 ## Known trade-offs
 
-- Each design is one DynamoDB item, capped at 400 KB; the API rejects bodies over 350 KB.
+- Each design is one DynamoDB item, capped at 400 KB; the API rejects bodies over 350 KB
+  and designs containing `data:` URLs. Images go through `POST /uploads` instead
+  (PNG, JPEG, WebP or GIF, up to 5 MB), and the design stores only the URL.
+- Uploads are off in local dev (no S3); `POST /uploads` returns 501 there.
+- Deleting a design does not delete its uploaded images.
 - 5 capacity units handle roughly 5 saves and 10 loads per second, plenty for a demo.
   Raising them past 25 total leaves the free allowance.
 - State is local. For a team, move it to an S3 backend.

@@ -56,7 +56,9 @@ resource "aws_lambda_function" "api" {
 
   environment {
     variables = {
-      TABLE_NAME = aws_dynamodb_table.designs.name
+      TABLE_NAME     = aws_dynamodb_table.designs.name
+      UPLOAD_BUCKET  = aws_s3_bucket.uploads.bucket
+      ASSET_BASE_URL = "https://${aws_cloudfront_distribution.site.domain_name}"
     }
   }
 
@@ -68,7 +70,7 @@ resource "aws_apigatewayv2_api" "api" {
   protocol_type = "HTTP"
 
   cors_configuration {
-    allow_origins = concat(["https://${aws_cloudfront_distribution.site.domain_name}"], var.extra_cors_origins)
+    allow_origins = local.app_origins
     allow_methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
     allow_headers = ["authorization", "content-type"]
     max_age       = 3600
@@ -101,7 +103,7 @@ resource "aws_apigatewayv2_route" "health" {
 }
 
 resource "aws_apigatewayv2_route" "designs" {
-  for_each = toset(["GET /designs", "POST /designs", "GET /designs/{id}", "PUT /designs/{id}", "DELETE /designs/{id}"])
+  for_each = toset(["GET /designs", "POST /designs", "GET /designs/{id}", "PUT /designs/{id}", "DELETE /designs/{id}", "POST /uploads"])
 
   api_id             = aws_apigatewayv2_api.api.id
   route_key          = each.value
